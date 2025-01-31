@@ -82,51 +82,30 @@ def transcribe_video(video_url):
 @timer_decorator
 def extract_reels_info(url, video_analysis=None):
     try:
-        # yt-dlp 설정
         ydl_opts = {
             'format': 'best',
             'extract_flat': False,
-            'quiet': True,  # 불필요한 출력 제거
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # 메타데이터 추출
             info = ydl.extract_info(url, download=False)
             
-            # 디버깅을 위해 모든 사용 가능한 키 출력
-            print("Available keys:", info.keys())
-            
-            # 기본 정보 구성 (수정된 부분)
             reels_info = {
-                'shortcode': url.split("/p/")[1].strip("/"),
-                'date': info.get('timestamp'),  # upload_date 대신 timestamp 사용
-                'caption': info.get('description', ''),
-                'view_count': info.get('view_count', 0),
-                'video_duration': info.get('duration', 0),
-                'likes': info.get('like_count', 0),
-                'comments': info.get('comment_count', 0),
-                'owner': info.get('uploader_id', ''),  # uploader 대신 uploader_id 사용
-                'video_url': info.get('url', '')
+                'shortcode': info['webpage_url_basename'],
+                'date': datetime.fromtimestamp(info['timestamp']).strftime('%Y-%m-%d'),
+                'caption': info['description'],
+                'view_count': 0,  # Instagram API 제한으로 인해 사용 불가
+                'video_duration': info['duration'],
+                'likes': info['like_count'],
+                'comments': info['comment_count'],
+                'owner': info['channel'],  # channel 필드 사용
+                'video_url': info['url']
             }
-            
-            # 트랜스크립션 수행
-            transcript = transcribe_video(reels_info['video_url'])
-            reels_info['raw_transcript'] = transcript
-            
-            # 스크립트와 캡션 처리
-            processed_result = process_transcript_and_caption(
-                transcript=transcript,
-                caption=reels_info['caption'],
-                video_analysis=video_analysis or {}
-            )
-            
-            reels_info['refined_transcript'] = processed_result['transcript']
-            reels_info['caption'] = processed_result['caption']
             
             return reels_info
             
     except Exception as e:
-        return f"에러 발생: {str(e)}"
+        return f"Error: {str(e)}"
 
 @timer_decorator
 def process_transcript_and_caption(transcript, caption, video_analysis):
