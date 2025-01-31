@@ -657,11 +657,11 @@ def display_progress():
         <style>
         /* 프로그레스 바 스타일 */
         .stProgress > div > div > div {
-            background: linear-gradient(45deg, #00C6FF, #0072FF) !important;
+            background-color: #E8F0FE !important;
         }
-        /* 진행되지 않은 부분 스타일 - 더 밝은 회색으로 변경 */
+        /* 진행되지 않은 부분 스타일 */
         .stProgress > div > div {
-            background-color: #F5F5F5 !important;
+            background-color: #E8F0FE !important;
         }
         .progress-label {
             text-align: center;
