@@ -248,9 +248,6 @@ def get_video_url(url):
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
-            # 추출된 모든 정보를 Streamlit에 표시
-            st.write("### 추출된 정보:")
-            st.json(info)
             return info.get('url')
     except Exception as e:
         st.error(f"Error: {str(e)}")
