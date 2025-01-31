@@ -240,12 +240,25 @@ def normalize_instagram_url(url):
         st.error(f"URL 정규화 중 오류 발생: {str(e)}")
         return url
 
-def get_video_url(url):
+def is_valid_instagram_url(url):
+    # Instagram URL 유효성 검사
+    instagram_pattern = r'https?://(?:www\.)?instagram\.com/(?:p|reel)/[a-zA-Z0-9_-]+'
+    return bool(re.match(instagram_pattern, url))
+
+def get_video_url(url, username=None, password=None):
     try:
         ydl_opts = {
             'format': 'best',
             'extract_flat': True,
         }
+        
+        # 로그인 정보가 있으면 추가
+        if username and password:
+            ydl_opts.update({
+                'username': username,
+                'password': password,
+            })
+        
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             return info.get('url')
@@ -747,7 +760,19 @@ def create_login_form():
         
         if submitted:
             if username and password:
-                return {"username": username, "password": password}
+                # 로그인 성공 여부 확인
+                try:
+                    ydl_opts = {
+                        'username': username,
+                        'password': password,
+                    }
+                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        # 로그인 테스트
+                        ydl.extract_info("https://www.instagram.com/", download=False)
+                    return {"username": username, "password": password}
+                except Exception as e:
+                    st.error(f"로그인 실패: {str(e)}")
+                    return None
             else:
                 st.error("사용자명과 비밀번호를 입력해주세요.")
                 return None
@@ -764,8 +789,8 @@ def process_url(input_data, username, password):
         st.error("올바른 Instagram URL을 입력해주세요.")
         return None
     
-    # 비디오 URL 가져오기
-    video_url = get_video_url(url)
+    # 비디오 URL 가져오기 (로그인 정보 전달)
+    video_url = get_video_url(url, username, password)
     if video_url:
         # 비디오 표시
         st.video(video_url)
