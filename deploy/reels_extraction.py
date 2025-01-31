@@ -82,42 +82,31 @@ def transcribe_video(video_url):
         return ""
 
 @timer_decorator
-def extract_reels_info(url, video_analysis=None):
+def extract_reels_info(url, username=None, password=None):
     try:
-        # Flat 모드로 먼저 시도
-        ydl_opts_flat = {
+        if not username or not password:
+            raise ValueError("Instagram 로그인이 필요합니다.")
+            
+        ydl_opts = {
             'format': 'best',
-            'extract_flat': True,
-            'quiet': False,  # 디버그 메시지 활성화
+            'username': username,
+            'password': password,
+            'quiet': False,  # 디버깅을 위해 로그 활성화
         }
         
-        print("\n=== Flat 모드 (extract_flat=True) ===")
-        with yt_dlp.YoutubeDL(ydl_opts_flat) as ydl:
-            flat_info = ydl.extract_info(url, download=False)
-            print("추출된 정보:", json.dumps(flat_info, indent=2, ensure_ascii=False))
-        
-        # 전체 모드로 시도
-        print("\n=== 전체 모드 (extract_flat=False) ===")
-        ydl_opts_full = {
-            'format': 'best',
-            'extract_flat': False,
-            'quiet': False,
-        }
-        
-        with yt_dlp.YoutubeDL(ydl_opts_full) as ydl:
-            full_info = ydl.extract_info(url, download=False)
-            print("추출된 정보:", json.dumps(full_info, indent=2, ensure_ascii=False))
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
             
             reels_info = {
-                'shortcode': full_info.get('webpage_url_basename', ''),
-                'date': datetime.fromtimestamp(full_info.get('timestamp', 0)).strftime('%Y-%m-%d'),
-                'caption': full_info.get('description', ''),
+                'shortcode': info.get('webpage_url_basename', ''),
+                'date': datetime.fromtimestamp(info.get('timestamp', 0)).strftime('%Y-%m-%d'),
+                'caption': info.get('description', ''),
                 'view_count': 0,
-                'video_duration': full_info.get('duration', 0),
-                'likes': full_info.get('like_count', 0),
-                'comments': full_info.get('comment_count', 0),
-                'owner': full_info.get('channel', ''),
-                'video_url': full_info.get('url', '')
+                'video_duration': info.get('duration', 0),
+                'likes': info.get('like_count', 0),
+                'comments': info.get('comment_count', 0),
+                'owner': info.get('channel', ''),
+                'video_url': info.get('url', '')
             }
             
             return reels_info

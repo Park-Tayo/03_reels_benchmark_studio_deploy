@@ -738,8 +738,40 @@ def get_cached_analysis(url, input_data):
         st.error(f"처리 중 오류가 발생했습니다: {str(e)}")
         return None
 
+def create_login_form():
+    with st.form("instagram_login"):
+        st.write("### Instagram 로그인")
+        username = st.text_input("사용자명", type="default")
+        password = st.text_input("비밀번호", type="password")
+        submitted = st.form_submit_button("로그인")
+        
+        if submitted:
+            if username and password:
+                return {"username": username, "password": password}
+            else:
+                st.error("사용자명과 비밀번호를 입력해주세요.")
+                return None
+    return None
+
 def main():
-    input_data = create_input_form()
+    st.title("✨ 릴스 벤치마킹 스튜디오")
+    
+    # 로그인 처리
+    if "instagram_credentials" not in st.session_state:
+        credentials = create_login_form()
+        if credentials:
+            st.session_state.instagram_credentials = credentials
+            st.experimental_rerun()
+    
+    # 로그인된 경우에만 메인 기능 표시
+    if "instagram_credentials" in st.session_state:
+        input_data = create_input_form()
+        if input_data:
+            result = process_url(input_data, 
+                               st.session_state.instagram_credentials["username"],
+                               st.session_state.instagram_credentials["password"])
+            if result:
+                display_results(result)
 
 if __name__ == "__main__":
     main() 
