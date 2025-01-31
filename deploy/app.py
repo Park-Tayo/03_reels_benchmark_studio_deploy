@@ -10,7 +10,6 @@ from api_config import get_api_config
 import requests
 import openai
 import re
-import instaloader
 import time
 from urllib.parse import urlparse
 import yt_dlp
