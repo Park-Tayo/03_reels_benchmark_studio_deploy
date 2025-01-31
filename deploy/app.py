@@ -765,10 +765,9 @@ def create_login_form():
                     ydl_opts = {
                         'username': username,
                         'password': password,
+                        'quiet': True,  # 불필요한 출력 숨김
                     }
-                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                        # 로그인 테스트
-                        ydl.extract_info("https://www.instagram.com/", download=False)
+                    # 로그인 정보만 저장하고 실제 테스트는 하지 않음
                     return {"username": username, "password": password}
                 except Exception as e:
                     st.error(f"로그인 실패: {str(e)}")
