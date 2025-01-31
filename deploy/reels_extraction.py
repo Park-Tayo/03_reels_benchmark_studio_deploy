@@ -9,6 +9,7 @@ import time
 from functools import wraps
 import requests
 from datetime import datetime
+import json
 
 # 상대 경로로 변경 (스트림릿 클라우드 호환)
 BASE_DIR = Path(__file__).parent.parent
@@ -83,54 +84,46 @@ def transcribe_video(video_url):
 @timer_decorator
 def extract_reels_info(url, video_analysis=None):
     try:
-        ydl_opts = {
+        # Flat 모드로 먼저 시도
+        ydl_opts_flat = {
             'format': 'best',
-            'extract_flat': True,  # 최소 정보만 먼저 시도
+            'extract_flat': True,
             'quiet': False,  # 디버그 메시지 활성화
         }
         
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
+        print("\n=== Flat 모드 (extract_flat=True) ===")
+        with yt_dlp.YoutubeDL(ydl_opts_flat) as ydl:
+            flat_info = ydl.extract_info(url, download=False)
+            print("추출된 정보:", json.dumps(flat_info, indent=2, ensure_ascii=False))
+        
+        # 전체 모드로 시도
+        print("\n=== 전체 모드 (extract_flat=False) ===")
+        ydl_opts_full = {
+            'format': 'best',
+            'extract_flat': False,
+            'quiet': False,
+        }
+        
+        with yt_dlp.YoutubeDL(ydl_opts_full) as ydl:
+            full_info = ydl.extract_info(url, download=False)
+            print("추출된 정보:", json.dumps(full_info, indent=2, ensure_ascii=False))
             
-            # 각 필드 개별적으로 시도하고 결과 출력
-            print("\n=== 접근 가능한 정보 테스트 ===")
-            fields_to_test = [
-                'webpage_url_basename',
-                'timestamp',
-                'description',
-                'duration',
-                'like_count',
-                'comment_count',
-                'channel',
-                'url'
-            ]
-            
-            available_data = {}
-            for field in fields_to_test:
-                try:
-                    value = info.get(field)
-                    available_data[field] = value
-                    print(f"✅ {field}: {value}")
-                except Exception as e:
-                    print(f"❌ {field}: {str(e)}")
-            
-            # 성공적으로 가져온 데이터만으로 결과 구성
             reels_info = {
-                'shortcode': available_data.get('webpage_url_basename', ''),
-                'date': datetime.fromtimestamp(available_data.get('timestamp', 0)).strftime('%Y-%m-%d') if available_data.get('timestamp') else '',
-                'caption': available_data.get('description', ''),
+                'shortcode': full_info.get('webpage_url_basename', ''),
+                'date': datetime.fromtimestamp(full_info.get('timestamp', 0)).strftime('%Y-%m-%d'),
+                'caption': full_info.get('description', ''),
                 'view_count': 0,
-                'video_duration': available_data.get('duration', 0),
-                'likes': available_data.get('like_count', 0),
-                'comments': available_data.get('comment_count', 0),
-                'owner': available_data.get('channel', ''),
-                'video_url': available_data.get('url', '')
+                'video_duration': full_info.get('duration', 0),
+                'likes': full_info.get('like_count', 0),
+                'comments': full_info.get('comment_count', 0),
+                'owner': full_info.get('channel', ''),
+                'video_url': full_info.get('url', '')
             }
             
             return reels_info
             
     except Exception as e:
-        print(f"전체 오류: {str(e)}")
+        print(f"\n오류 발생: {str(e)}")
         return f"Error: {str(e)}"
 
 @timer_decorator
