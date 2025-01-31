@@ -86,22 +86,26 @@ def extract_reels_info(url, video_analysis=None):
         ydl_opts = {
             'format': 'best',
             'extract_flat': False,
+            'quiet': True,  # 불필요한 출력 제거
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             # 메타데이터 추출
             info = ydl.extract_info(url, download=False)
             
-            # 기본 정보 구성
+            # 디버깅을 위해 모든 사용 가능한 키 출력
+            print("Available keys:", info.keys())
+            
+            # 기본 정보 구성 (수정된 부분)
             reels_info = {
                 'shortcode': url.split("/p/")[1].strip("/"),
-                'date': info.get('upload_date', ''),
+                'date': info.get('timestamp'),  # upload_date 대신 timestamp 사용
                 'caption': info.get('description', ''),
                 'view_count': info.get('view_count', 0),
                 'video_duration': info.get('duration', 0),
                 'likes': info.get('like_count', 0),
                 'comments': info.get('comment_count', 0),
-                'owner': info.get('uploader', ''),
+                'owner': info.get('uploader_id', ''),  # uploader 대신 uploader_id 사용
                 'video_url': info.get('url', '')
             }
             
