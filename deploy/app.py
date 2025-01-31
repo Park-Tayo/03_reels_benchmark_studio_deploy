@@ -761,7 +761,7 @@ def main():
         credentials = create_login_form()
         if credentials:
             st.session_state.instagram_credentials = credentials
-            st.experimental_rerun()
+            st.rerun()
     
     # 로그인된 경우에만 메인 기능 표시
     if "instagram_credentials" in st.session_state:
