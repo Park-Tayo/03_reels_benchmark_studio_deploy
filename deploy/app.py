@@ -753,6 +753,48 @@ def create_login_form():
                 return None
     return None
 
+def process_url(input_data, username, password):
+    url = input_data.get("url", "")
+    if not url:
+        st.warning("URL을 입력해주세요.")
+        return None
+        
+    # URL 유효성 검사
+    if not is_valid_instagram_url(url):
+        st.error("올바른 Instagram URL을 입력해주세요.")
+        return None
+    
+    # 비디오 URL 가져오기
+    video_url = get_video_url(url)
+    if video_url:
+        # 비디오 표시
+        st.video(video_url)
+        
+        # 릴스 정보 추출
+        reels_info = extract_reels_info(url, username=username, password=password)
+        if isinstance(reels_info, str) and reels_info.startswith("Error"):
+            st.error(reels_info)
+            return None
+            
+        if reels_info:
+            return {
+                "url": url,
+                "video_analysis": {
+                    "intro_copy": st.session_state.form_data['video_intro_copy'],
+                    "intro_structure": st.session_state.form_data['video_intro_structure'],
+                    "narration": st.session_state.form_data['narration'],
+                    "music": st.session_state.form_data['music'],
+                    "font": st.session_state.form_data['font']
+                },
+                "content_info": {
+                    "topic": input_data.get("content_info", {}).get("topic", "")
+                }
+            }
+    else:
+        st.error("Instagram URL에서 동영상을 찾을 수 없습니다.")
+    
+    return None
+
 def main():
     st.title("✨ 릴스 벤치마킹 스튜디오")
     
