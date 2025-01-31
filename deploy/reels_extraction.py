@@ -8,6 +8,7 @@ from api_config import get_api_config
 import time
 from functools import wraps
 import requests
+from datetime import datetime
 
 # 상대 경로로 변경 (스트림릿 클라우드 호환)
 BASE_DIR = Path(__file__).parent.parent
@@ -84,27 +85,52 @@ def extract_reels_info(url, video_analysis=None):
     try:
         ydl_opts = {
             'format': 'best',
-            'extract_flat': False,
+            'extract_flat': True,  # 최소 정보만 먼저 시도
+            'quiet': False,  # 디버그 메시지 활성화
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             
+            # 각 필드 개별적으로 시도하고 결과 출력
+            print("\n=== 접근 가능한 정보 테스트 ===")
+            fields_to_test = [
+                'webpage_url_basename',
+                'timestamp',
+                'description',
+                'duration',
+                'like_count',
+                'comment_count',
+                'channel',
+                'url'
+            ]
+            
+            available_data = {}
+            for field in fields_to_test:
+                try:
+                    value = info.get(field)
+                    available_data[field] = value
+                    print(f"✅ {field}: {value}")
+                except Exception as e:
+                    print(f"❌ {field}: {str(e)}")
+            
+            # 성공적으로 가져온 데이터만으로 결과 구성
             reels_info = {
-                'shortcode': info['webpage_url_basename'],
-                'date': datetime.fromtimestamp(info['timestamp']).strftime('%Y-%m-%d'),
-                'caption': info['description'],
-                'view_count': 0,  # Instagram API 제한으로 인해 사용 불가
-                'video_duration': info['duration'],
-                'likes': info['like_count'],
-                'comments': info['comment_count'],
-                'owner': info['channel'],  # channel 필드 사용
-                'video_url': info['url']
+                'shortcode': available_data.get('webpage_url_basename', ''),
+                'date': datetime.fromtimestamp(available_data.get('timestamp', 0)).strftime('%Y-%m-%d') if available_data.get('timestamp') else '',
+                'caption': available_data.get('description', ''),
+                'view_count': 0,
+                'video_duration': available_data.get('duration', 0),
+                'likes': available_data.get('like_count', 0),
+                'comments': available_data.get('comment_count', 0),
+                'owner': available_data.get('channel', ''),
+                'video_url': available_data.get('url', '')
             }
             
             return reels_info
             
     except Exception as e:
+        print(f"전체 오류: {str(e)}")
         return f"Error: {str(e)}"
 
 @timer_decorator
